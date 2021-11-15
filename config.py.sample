@@ -1,0 +1,56 @@
+OUTPUTS = {
+	'eDP': 0,
+	'DVI-I-2-2': 1,
+	'DVI-I-1-1': 2
+}
+
+WORKSPACES = [
+	{
+		"name": "1: Shell",
+		"match": [
+			".*kitty.*"
+		]
+	},
+	{
+		"name": "2: Internet",
+		"match": [
+			".*firefox.*",
+			".*Firefox.*",
+			".*opera.*"
+		]
+	},
+	{
+		"name": "3: Code",
+		"match": [
+			".*Geany.*",
+			".*Subl.*",
+			".*subl.*"
+		]
+	},
+	{
+		"name": "4: Chat",
+		"match": [
+			".*Signal.*",
+			".*Element.*"
+		]
+	},
+	{
+		"name": "5: Mail",
+		"match": [
+			".*Thunderbird.*"
+		]
+	},
+	{
+		"name": "6: Office",
+		"match": [
+			".*LibreOffice.*",
+			".*TexStudio.*"
+		]
+	},
+	{
+		"name": "7: Sonstiges",
+		"match": [
+			".*KeePassXC.*"
+		]
+	}
+]

@@ -1,65 +1,12 @@
+#!/usr/bin/env python3
+
 import i3ipc
 import re
+from config import OUTPUTS, WORKSPACES
 
 i3 = i3ipc.Connection()
-
-OUTPUTS = {
-	'eDP': 0,
-	'DVI-I-2-2': 1,
-	'DVI-I-1-1': 2
-}
-
-WORKSPACES = [
-	{
-		"name": "1: Shell",
-		"match": [
-			".*kitty.*"
-		]
-	},
-	{
-		"name": "2: Internet",
-		"match": [
-			".*firefox.*",
-			".*opera.*"
-		]
-	},
-	{
-		"name": "3: Code",
-		"match": [
-			".*Geany.*",
-			".*Subl.*",
-			".*subl.*"
-		]
-	},
-	{
-		"name": "4: Chat",
-		"match": [
-			".*Signal.*",
-			".*Element.*"
-		]
-	},
-	{
-		"name": "5: Mail",
-		"match": [
-			".*Thunderbird.*"
-		]
-	},
-	{
-		"name": "6: Office",
-		"match": [
-			".*LibreOffice.*",
-			".*TexStudio.*"
-		]
-	},
-	{
-		"name": "7: Sonstiges",
-		"match": [
-			".*KeePassXC.*"
-		]
-	}
-]
-
 RULES = []
+OLD_FOCUS = None
 
 def init_rules():
 	for workspace in WORKSPACES:
@@ -70,13 +17,14 @@ def init_rules():
 
 def get_current_workspace():
 	workspaces = i3.get_workspaces()
-	return list(filter(lambda o: o.focused, workspaces))[0]
+	workspace = list(filter(lambda o: o.focused, workspaces))[0]
+	return workspace
 
 def get_current_output():
 	return get_current_workspace().output
 
 
-def new_window(i3, e, *args, **kwargs):
+def ev_window_new(i3, e, *args, **kwargs):
 	window_name = e.container.name
 	current_output = get_current_output()
 	try:
@@ -86,14 +34,39 @@ def new_window(i3, e, *args, **kwargs):
 
 	for rule in RULES:
 		if rule['rule'].match(window_name):
-			workspace_name = f"{current_output_id}.{rule['workspace']}"
+			workspace_name = f"{current_output_id}{rule['workspace']}"
 			break
 	else:
-		workspace_name = f"{current_output_id}.?: {window_name}"
+		workspace_name = f"{current_output_id}9: {window_name}"
 
 	e.container.command(f"move container to workspace {workspace_name}")
+	i3.command(f"workspace {workspace_name}")
+
+def ev_window_close(i3, e, *args, **kwargs):
+	global OLD_FOCUS
+	workspace = i3.get_tree().find_focused().workspace()
+	if workspace.leaves():
+		return
+	if not OLD_FOCUS:
+		return
+
+	leaves = OLD_FOCUS.leaves()
+	if leaves:
+		leaves[0].command(f"focus")
+	else:
+		OLD_FOCUS.command(f"focus")
+
+def ev_ws_focus(i3, e, *args, **kwargs):
+	global OLD_FOCUS
+	if not e.old:
+		return
+	if e.old == OLD_FOCUS:
+		return
+
+	OLD_FOCUS = e.old
 
 init_rules()
-
-i3.on(i3ipc.Event.WINDOW_NEW, new_window)
+i3.on(i3ipc.Event.WINDOW_NEW, ev_window_new)
+i3.on(i3ipc.Event.WINDOW_CLOSE, ev_window_close)
+i3.on(i3ipc.Event.WORKSPACE_FOCUS, ev_ws_focus)
 i3.main()

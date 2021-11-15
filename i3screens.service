@@ -1,0 +1,9 @@
+[Unit]
+Description=Start i3screens manager
+[Service]
+Restart=on-failure
+Type=simple
+ExecStart=/usr/bin/python3 /home/sneef/code/i3screens/i3screens.py
+Environment='PYTHONUNBUFFERED=1'
+[Install]
+WantedBy=default.target 
