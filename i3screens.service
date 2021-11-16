@@ -1,7 +1,7 @@
 [Unit]
 Description=Start i3screens manager
 [Service]
-Restart=on-failure
+Restart=always
 Type=simple
 ExecStart=/usr/bin/python3 /home/YOURUSERNAME/i3screens/i3screens.py
 Environment='PYTHONUNBUFFERED=1'
