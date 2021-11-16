@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
+# @author gehaxelt
+# @repo https://github.com/gehaxelt/python-i3screens
 
 import i3ipc
 import re
 from config import OUTPUTS, WORKSPACES
 
 i3 = i3ipc.Connection()
-RULES = []
-OLD_FOCUS = None
+RULES = [] # List of compiled matching rules.
+PREV_WS = None # Previous workspace that was focused.
 
 def init_rules():
+	"""
+	Compile the regular expressions used for matching windows to workspaces.
+	"""
 	for workspace in WORKSPACES:
 		name = workspace['name']
 		rules = workspace['match']
@@ -16,16 +21,25 @@ def init_rules():
 			RULES.append({'rule': re.compile(rule), 'workspace': name})
 
 def get_current_workspace():
+	"""
+	Identify the currently used workspace. We can use the "focused" property, since only one WS can be focused at a time (apparently?).
+	"""
 	workspaces = i3.get_workspaces()
 	workspace = list(filter(lambda o: o.focused, workspaces))[0]
 	return workspace
 
 def get_current_output():
+	"""
+	Identify on which monitor the current workspace is, so that we can spawn the new workspace on the right monitor.
+	"""
 	return get_current_workspace().output
 
 
-def ev_window_new(i3, e, *args, **kwargs):
-	window_name = e.container.name
+def ev_window_new(i3, event, *args, **kwargs):
+	"""
+	If a new window spawns, move it to the right workspace on the current monitor. 
+	"""
+	window_name = event.container.name
 	current_output = get_current_output()
 	try:
 		current_output_id = OUTPUTS[current_output]
@@ -39,31 +53,37 @@ def ev_window_new(i3, e, *args, **kwargs):
 	else:
 		workspace_name = f"{current_output_id}9: {window_name}"
 
-	e.container.command(f"move container to workspace {workspace_name}")
+	event.container.command(f"move container to workspace {workspace_name}")
 	i3.command(f"workspace {workspace_name}")
 
-def ev_window_close(i3, e, *args, **kwargs):
-	global OLD_FOCUS
+def ev_window_close(i3, event, *args, **kwargs):
+	"""
+	Check if we just closed all windows of a workspace. If so, focus the previous workspace, thereby removing the empty workspace.
+	"""
+	global PREV_WS
 	workspace = i3.get_tree().find_focused().workspace()
 	if workspace.leaves():
 		return
-	if not OLD_FOCUS:
+	if not PREV_WS:
 		return
 
-	leaves = OLD_FOCUS.leaves()
+	leaves = PREV_WS.leaves()
 	if leaves:
 		leaves[0].command(f"focus")
 	else:
-		OLD_FOCUS.command(f"focus")
+		PREV_WS.command(f"focus")
 
-def ev_ws_focus(i3, e, *args, **kwargs):
-	global OLD_FOCUS
-	if not e.old:
+def ev_ws_focus(i3, event, *args, **kwargs):
+	"""
+	Remember the last focused workspace, so that we can switch to it if we empty the currently focused one.
+	"""
+	global PREV_WS
+	if not event.old:
 		return
-	if e.old == OLD_FOCUS:
+	if event.old == PREV_WS:
 		return
 
-	OLD_FOCUS = e.old
+	PREV_WS = event.old
 
 init_rules()
 i3.on(i3ipc.Event.WINDOW_NEW, ev_window_new)
