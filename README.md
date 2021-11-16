@@ -6,7 +6,7 @@ A helper tool for managing i3wm workspaces on multiple monitors.
 You have a multi-monitor setup and want to have the "same" workspaces on multiple monitors at the same time. `i3screens` is a simple python script which listens to several i3wm-events and creates the configured workspaces on the currently focused monitor. It also allows you to apply matching rules so that new windows are automatically moved to the correct workspace.
 
 
-./i3screens-preview.webm
+![i3screens demo gif](./i3screens-demo.gif)
 
 # Installation
 
