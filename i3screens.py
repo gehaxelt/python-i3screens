@@ -39,7 +39,7 @@ def ev_window_new(i3, event, *args, **kwargs):
 	"""
 	If a new window spawns, move it to the right workspace on the current monitor. 
 	"""
-	window_name = event.container.name
+	window_class = event.container.window_class
 	current_output = get_current_output()
 	try:
 		current_output_id = OUTPUTS[current_output]
@@ -47,11 +47,11 @@ def ev_window_new(i3, event, *args, **kwargs):
 		current_output_id = 0
 
 	for rule in RULES:
-		if rule['rule'].match(window_name):
+		if rule['rule'].match(window_class):
 			workspace_name = f"{current_output_id}{rule['workspace']}"
 			break
 	else:
-		workspace_name = f"{current_output_id}9: {window_name}"
+		workspace_name = f"{current_output_id}9: {window_class}"
 
 	event.container.command(f"move container to workspace {workspace_name}")
 	i3.command(f"workspace {workspace_name}")
