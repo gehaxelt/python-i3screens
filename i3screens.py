@@ -85,8 +85,21 @@ def ev_ws_focus(i3, event, *args, **kwargs):
 
 	PREV_WS = event.old
 
+def ev_output_changed(i3, event, *args, **kwargs):
+	active_outputs = []
+	for output in i3.get_outputs():
+		if output.active and output.name in OUTPUTS.keys():
+			active_outputs.append(output.name)
+
+	print(active_outputs)
+	for workspace in i3.get_workspaces():
+		for a_output in active_outputs:
+			if workspace.name.startswith(str(OUTPUTS[a_output])):
+				i3.command(f"[workspace=\"{workspace.name}\"] move workspace to output {a_output}")
+
 init_rules()
 i3.on(i3ipc.Event.WINDOW_NEW, ev_window_new)
 i3.on(i3ipc.Event.WINDOW_CLOSE, ev_window_close)
 i3.on(i3ipc.Event.WORKSPACE_FOCUS, ev_ws_focus)
+i3.on(i3ipc.Event.OUTPUT, ev_output_changed)
 i3.main()
